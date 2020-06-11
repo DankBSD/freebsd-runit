@@ -36,60 +36,21 @@ all:
 
 install:
 	@${MKDIR} ${DESTDIR}${PREFIX}/bin ${DESTDIR}${PREFIX}/sbin ${DESTDIR}${SBINDIR} \
-		${DESTDIR}${RUNITDIR} ${DESTDIR}${SVDIR} ${DESTDIR}${DOCSDIR}
+		${DESTDIR}${RUNITDIR} ${DESTDIR}${DOCSDIR}
 	cd runit/command && \
 		${INSTALL_PROGRAM} runit runit-init ${DESTDIR}${SBINDIR}
 	cd runit/command && \
 		${INSTALL_PROGRAM} chpst runsv runsvchdir runsvdir sv svlogd \
 		utmpset ${DESTDIR}${PREFIX}/sbin
-	${INSTALL_SCRIPT} bin/svclone bin/svmod ${DESTDIR}${PREFIX}/bin
-	@${MKDIR} ${DESTDIR}${PREFIX}/man/man7 ${DESTDIR}${PREFIX}/man/man8
-	${INSTALL_MAN} docs/runit-faster.7 ${DESTDIR}${PREFIX}/man/man7
-	${INSTALL_MAN} runit/man/*.8 docs/svclone.8 docs/svmod.8 ${DESTDIR}${PREFIX}/man/man8
-	${INSTALL_MAN} runit/doc/*.html ${DESTDIR}${DOCSDIR}
+	@${MKDIR} ${DESTDIR}${PREFIX}/man/man8
+	${INSTALL_MAN} runit/man/*.8 ${DESTDIR}${PREFIX}/man/man8
 	@${SED} -i '' -e 's,/usr/local/etc/runit,${RUNITDIR},g' \
-		${DESTDIR}${PREFIX}/man/man8/*.8 \
-		${DESTDIR}${DOCSDIR}/*.html
-	@${SED} -i '' -e 's,%%RUNITDIR%%,${RUNITDIR},g' \
-		-e 's,%%SBINDIR%%,${SBINDIR},g' \
-		-e 's,%%SVDIR%%,${SVDIR},g' \
-		-e 's,%%PREFIX%%,${PREFIX},g' \
-		-e 's,%%LOCALBASE%%,${LOCALBASE},g' \
-		${DESTDIR}${PREFIX}/bin/svclone \
-		${DESTDIR}${PREFIX}/man/man7/runit-faster.7 \
-		${DESTDIR}${PREFIX}/man/man8/svclone.8 \
-		${DESTDIR}${PREFIX}/man/man8/svmod.8
+		${DESTDIR}${PREFIX}/man/man8/*.8
 	@${TAR} -C etc/runit --exclude .gitkeep -cf - . | ${TAR} -C ${DESTDIR}${RUNITDIR} -xf -
-	@${TAR} -C etc/sv --exclude supervise -cf - . | ${TAR} -C ${DESTDIR}${SVDIR} -xf -
-	@${FIND} ${DESTDIR}${RUNITDIR} ${DESTDIR}${SVDIR} -type f -exec ${SED} -i '' \
+	@${FIND} ${DESTDIR}${RUNITDIR} -type f -exec ${SED} -i '' \
 		-e 's,/usr/local/etc/runit,${RUNITDIR},g' \
 		-e 's,//etc,/etc,' \
 		-e 's,/usr/local,${LOCALBASE},g' {} \;
-# Create convenient getty services for every terminal device that is
-# by default in /etc/ttys
-.for tty in ${GETTYSV} ${GETTYSU}
-	@${MKDIR} ${DESTDIR}${SVDIR}/getty-${tty}
-	@cd ${DESTDIR}${SVDIR}/getty-${tty} && \
-		${LN} -sf ../getty-ttyv1/run && \
-		${LN} -sf ../getty-ttyv1/finish
-.endfor
-.for tty in ${GETTYSU}
-	@${PRINTF} "TERM='vt100'\nTYPE='3wire'\n" > ${DESTDIR}${SVDIR}/getty-${tty}/conf
-.endfor
-# Link supervise dir of services to /var/run/runit to potentially
-# support systems with read-only filesystems.
-	@cd ${DESTDIR}${SVDIR} && ${FIND} -d . -type d | while read -r file; do \
-		dir=$${file#./*}; \
-		if [ "$${dir}" != "." ] && [ -x "$${dir}/run" ]; then \
-			${LN} -sf /var/run/runit/supervise.$$(echo $${dir} | ${SED} "s,/,-,g") \
-				$${dir}/supervise; \
-		fi; \
-	done
-# Point runit to the run directory (a necessity to let runit work on
-# read-only root filesystems) and make sure rebooting and powering off
-# can work correctly.
-	${LN} -s /var/run/runit/reboot ${DESTDIR}${RUNITDIR}/reboot
-	${LN} -s /var/run/runit/stopit ${DESTDIR}${RUNITDIR}/stopit
 
 format:
 	${SHFMT} -w -s -p bin etc/runit etc/sv
