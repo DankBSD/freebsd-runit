@@ -1,6 +1,8 @@
 # No ZFS support on FreeBSD/powerpc
 [ "$(sysctl -n hw.machine_arch)" = "powerpc" ] && return 0
 
+PATH=/usr/local/sbin:/usr/local/bin:$PATH
+
 if [ -z "${JAILED}" ]; then
 	echo "=> Importing ZFS pools"
 	for cachefile in /etc/zfs/zpool.cache /boot/zfs/zpool.cache; do
