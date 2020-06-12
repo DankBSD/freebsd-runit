@@ -6,26 +6,8 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/rescue
 
 detect_jail
 
-runlevel=default
-# shellcheck disable=SC2153
-if [ -z "${JAILED}" ] && kenv -q runit.runlevel >/dev/null; then
-	arg=$(kenv runit.runlevel)
-	if [ -d /usr/local/etc/runit/runsvdir/"$arg" ]; then
-		echo "Runlevel detected via kenv: '$arg'"
-		runlevel="$arg"
-	fi
-elif [ -n "${RUNLEVEL}" ]; then
-	if [ -d /usr/local/etc/runit/runsvdir/"${RUNLEVEL}" ]; then
-		echo "Runlevel detected via environment: '${RUNLEVEL}'"
-		runlevel="${RUNLEVEL}"
-	fi
-fi
-
 [ -x /usr/local/etc/runit/local ] && /usr/local/etc/runit/local
-
-runsvchdir "${runlevel}" || emergency_shell
-ln -sF /usr/local/etc/runit/runsvdir/current /var/run/runit/runsvdir/current
 
 /usr/sbin/utx boot
 
-exec env - PATH=$PATH runsvdir -P /var/run/runit/runsvdir/current 'log: ...........................................................................................................................................................................................................................................................................................................................................................................................................'
+exec env - PATH=$PATH runsvdir -P /var/service 'log: ................................................................................................................................................................................'
